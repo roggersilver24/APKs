@@ -1,8 +1,12 @@
-name: Build Android APK
+name: Build Amamenta Bebe APK
 
 on:
   push:
     branches: [main, master]
+  pull_request:
+    paths:
+      - 'amamenta-bebe/**'
+      - '.github/workflows/build-apk.yml'
   workflow_dispatch:
 
 permissions:
@@ -11,6 +15,9 @@ permissions:
 jobs:
   family-rules:
     runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: amamenta-bebe
     timeout-minutes: 10
     steps:
       - uses: actions/checkout@v4
@@ -22,12 +29,15 @@ jobs:
         with:
           node-version: '22'
           cache: npm
-          cache-dependency-path: backend/package-lock.json
+          cache-dependency-path: amamenta-bebe/backend/package-lock.json
       - run: npm ci --prefix backend --ignore-scripts
       - run: npm run test:emulator --prefix backend
   build:
     needs: family-rules
     runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: amamenta-bebe
     timeout-minutes: 20
     env:
       ANDROID_KEYSTORE_BASE64: ${{ secrets.ANDROID_KEYSTORE_BASE64 }}
@@ -105,7 +115,7 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: Amamenta-Bebe-APK
-          path: amamenta-bebe.apk
+          path: amamenta-bebe/amamenta-bebe.apk
           if-no-files-found: error
       - name: Upload validation reports
         if: always()
@@ -113,7 +123,7 @@ jobs:
         with:
           name: Amamenta-Bebe-Validation
           path: |
-            app/build/reports/tests/
-            app/build/reports/lint-results-debug.*
-            gradle.log
+            amamenta-bebe/app/build/reports/tests/
+            amamenta-bebe/app/build/reports/lint-results-debug.*
+            amamenta-bebe/gradle.log
           if-no-files-found: warn
