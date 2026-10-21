@@ -46,6 +46,7 @@ class MainActivity : ComponentActivity() {
         var refreshing by remember { mutableStateOf(true) }
         var refreshId by remember { mutableIntStateOf(0) }
         var pendingApp by remember { mutableStateOf<InstalledApp?>(null) }
+        var restoreFromHistory by remember { mutableStateOf<String?>(null) }
         var operationInProgress by remember { mutableStateOf(false) }
         var notice by remember { mutableStateOf("") }
         var history by remember { mutableStateOf(ActionHistory.read(this@MainActivity)) }
@@ -147,8 +148,8 @@ class MainActivity : ComponentActivity() {
                             Text(app.label, fontWeight = FontWeight.SemiBold)
                             Text(app.packageName, style = MaterialTheme.typography.bodySmall)
                             Text(
-                                app.group.title + " • " + if (app.systemApp) "Sistema" else "Usuário"
-                                    + if (!app.enabled) " • Desativado" else "",
+                                app.group.title + " • " + (if (app.systemApp) "Sistema" else "Usuário") +
+                                    (if (!app.enabled) " • Desativado" else ""),
                                 style = MaterialTheme.typography.labelSmall
                             )
                             if (app.group == RiskGroup.REVIEW && app.systemApp && supportedDevice && primaryUser) {
@@ -174,6 +175,19 @@ class MainActivity : ComponentActivity() {
                                     .format(Date(h.timestamp)),
                                 style = MaterialTheme.typography.bodySmall
                             )
+                        }
+                        val restoreTargets = history.distinctBy { it.packageName }
+                            .filter { !it.enabled && AppPolicy.canChange(it.packageName) }
+                        if (restoreTargets.isNotEmpty()) {
+                            Spacer(Modifier.height(6.dp))
+                            Text("Recuperação pelo histórico (se o pacote sumiu da lista):",
+                                style = MaterialTheme.typography.bodySmall)
+                            restoreTargets.forEach { entry ->
+                                OutlinedButton(
+                                    onClick = { restoreFromHistory = entry.packageName },
+                                    enabled = canChange && !operationInProgress
+                                ) { Text("Restaurar " + entry.packageName) }
+                            }
                         }
                     }
                 }
@@ -220,5 +234,37 @@ class MainActivity : ComponentActivity() {
                 }
             )
         }
+        restoreFromHistory?.let { pkg ->
+            AlertDialog(
+                onDismissRequest = { if (!operationInProgress) restoreFromHistory = null },
+                title = { Text("Restaurar pacote do histórico?") },
+                text = { Text("Reativar $pkg para o usuário principal? A restauração pode ser recusada pelo sistema.") },
+                confirmButton = {
+                    Button(
+                        enabled = canChange && !operationInProgress && AppPolicy.canChange(pkg),
+                        onClick = {
+                            operationInProgress = true
+                            scope.launch {
+                                val result = gateway.changePackage(pkg, true)
+                                notice = result
+                                if (result.startsWith("OK:")) {
+                                    ActionHistory.record(this@MainActivity, pkg, true)
+                                    history = ActionHistory.read(this@MainActivity)
+                                }
+                                restoreFromHistory = null
+                                operationInProgress = false
+                                refreshId++
+                            }
+                        }
+                    ) { Text(if (operationInProgress) "Restaurando..." else "Confirmar restauração") }
+                },
+                dismissButton = {
+                    TextButton(onClick = { restoreFromHistory = null }, enabled = !operationInProgress) {
+                        Text("Cancelar")
+                    }
+                }
+            )
+        }
+
     }
 }
