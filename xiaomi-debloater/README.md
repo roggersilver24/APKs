@@ -1,36 +1,43 @@
-# Xiaomi Debloater — Android (fase 1)
+# Xiaomi Debloater — Android, v0.2 experimental
 
-App nativo Android para Xiaomi, Redmi e POCO, planejado para analisar apps preinstalados em MIUI e HyperOS, com interface em portugues.
+APK para Xiaomi, Redmi e POCO (MIUI/HyperOS), escrito em Kotlin + Jetpack Compose. **Esta versão ainda não foi testada em telefones físicos** e não promete compatibilidade com todos os modelos.
 
-## Implementado nesta fase
+## Implementado
+- Scanner local de aplicativos instalados, busca e filtros.
+- Categorias: protegido, revisar, desconhecido e usuário.
+- Conexão com Shizuku 13, autorização explícita e UserService + AIDL.
+- Desativação **reversível** (`pm disable-user --user 0`) e restauração (`pm enable --user 0`), somente com confirmação individual.
+- Regras de segurança duplicadas no processo privilegiado: apenas `com.miui.analytics`, `com.miui.msa.global` e `com.xiaomi.mipicks` podem ser alterados, após revisão manual. Não há remoção, root automático ou comandos arbitrários.
+- Verificação do resultado e histórico local de operações confirmadas.
+- Alterações desabilitadas em fabricantes não reconhecidos e perfis Android secundários.
 
-- Aplicativo Android Kotlin + Jetpack Compose independente do Amamenta Bebe.
-- Scanner local de aplicativos instalados, busca e filtros por classificacao.
-- Classificador conservador: protegido, candidato para revisao, desconhecido e aplicativo de usuario.
-- Nenhuma remocao/desativacao ainda — primeiro verificaremos a lista de bloqueio, o estado de Shizuku e a restauracao.
-- Suite de testes unitarios para classificacao de pacotes.
-- Pipeline separado de build e APK debug para testes controlados.
+## Como testar
+1. Faça backup do aparelho e **não comece em um telefone de uso crítico**.
+2. Instale o Shizuku oficial: https://shizuku.rikka.app/download/
+3. Inicie o Shizuku com Depuração sem fio (Android 11+, quando suportado) ou ADB pelo computador. A versão e a ROM podem impor outras restrições.
+4. Instale o APK debug da execução **Build Xiaomi Debloater Scanner** no GitHub Actions, abra o app e pressione **Autorizar / Conectar**.
+5. Somente para um pacote listado como **Revisar**, leia a confirmação e, se decidir, desative-o. Confira o comportamento do aparelho.
+6. Para recuperar, abra o app e use **Restaurar aplicativo**. Se o aparelho ou Shizuku estiver indisponível, pelo computador com ADB:
+   ```sh
+   adb shell pm enable --user 0 com.miui.msa.global
+   ```
+   Use o nome exato do pacote anteriormente desativado.
 
 ## Compilar
-
-Requer JDK 17 e Android SDK 35:
-
+JDK 17, Android SDK 35:
 ```sh
 cd xiaomi-debloater
 ./gradlew testDebugUnitTest lintDebug assembleDebug
 ```
+APK: `app/build/outputs/apk/debug/app-debug.apk`.
 
-APK de teste: `app/build/outputs/apk/debug/app-debug.apk`. Nao e uma versao de limpeza pronta para uso.
+## Avisos
+- **Não desinstala apps.** Só desativa/reativa pacotes da lista fechada.
+- A classificação `Revisar` não garante que um pacote é seguro em todas as ROMs.
+- O Shizuku iniciado por ADB normalmente precisa ser reiniciado após reinicializar o aparelho.
+- O inventário utiliza `QUERY_ALL_PACKAGES`, permissão restrita na Google Play; rever política antes da distribuição.
+- O histórico fica no telefone e pode se perder se os dados do app forem apagados.
+- Operações podem ser recusadas por MIUI/HyperOS e o app não contorna essas restrições.
+- Nenhuma lista ou dado de apps é enviado a um servidor.
 
-## Planejado (nao implementado)
-
-1. Integracao Shizuku com autorizacao explicita e UserService; sem root.
-2. Lista de pacotes revisada por ROM/versao, regras e explicacoes; **sem prometer suporte a todo Xiaomi**.
-3. Modo conservador de desativacao, transacao por pacote, diagnostico e restauracao.
-4. Historico local e operacoes em lote somente para pacotes previamente verificados.
-
-## Seguranca
-
-O app nao envia a lista de aplicativos para servidores e nao executa comandos ADB nesta fase. Pacotes essenciais sao protegidos por regra; classificacao de candidato nao significa remocao segura. A permissao QUERY_ALL_PACKAGES e necessaria para a funcao central de inventario de aplicativos e deve ser revisada antes de eventual publicacao na Play Store.
-
-Referencias de pesquisa: Xiaomi Debloater, HyperOS Debloater, Universal Android Debloater NG e documentacao oficial Shizuku.
+Referências: https://github.com/RikkaApps/Shizuku-API ; https://github.com/fadeltd/xiaomi-debloater ; https://github.com/ovsky/hyperos-debloater ; https://github.com/Universal-Debloater-Alliance/universal-android-debloater-next-generation
