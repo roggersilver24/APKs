@@ -1,13 +1,18 @@
 package br.com.roggersilver.xiaomidebloater
 
+import java.util.Locale
+
 enum class RiskGroup(val title: String) {
     PROTECTED("Protegido"),
     REVIEW("Revisar"),
     UNKNOWN("Desconhecido"),
-    USER("Usuario")
+    USER("Usuário")
 }
 
-/** Conservative classifier. No group gives permission to remove a package. */
+/**
+ * Fail-closed policy: an entry in REVIEW is NEVER automatically disabled.
+ * The privileged process validates the allowlist independently on every call.
+ */
 object AppPolicy {
     private val protectedExact = setOf(
         "android",
@@ -22,20 +27,38 @@ object AppPolicy {
         "com.google.android.gsf",
         "com.miui.home",
         "com.miui.securitycenter",
+        "com.miui.guardprovider",
         "com.xiaomi.xmsf",
         "com.xiaomi.finddevice"
     )
-    private val protectedPrefixes = listOf("android.", "com.android.", "com.google.android.", "com.android.providers.")
-    private val reviewCandidates = setOf(
+
+    private val protectedPrefixes = listOf(
+        "android.", "com.android.", "com.google.android."
+    )
+
+    // An intentionally tiny initial allowlist, NOT a blanket approval of
+    // Xiaomi components on all firmware variants.
+    private val reviewedCandidates = setOf(
         "com.miui.analytics",
         "com.miui.msa.global",
         "com.xiaomi.mipicks"
     )
+
+    fun isProtected(pkg: String): Boolean =
+        pkg.isBlank() || pkg in protectedExact || protectedPrefixes.any(pkg::startsWith)
+
+    fun canChange(pkg: String): Boolean =
+        pkg in reviewedCandidates && !isProtected(pkg)
+
+    fun isXiaomiFamily(manufacturer: String): Boolean =
+        manufacturer.lowercase(Locale.ROOT).let {
+            it.contains("xiaomi") || it.contains("redmi") || it.contains("poco")
+        }
+
     fun classify(pkg: String, systemApp: Boolean): RiskGroup = when {
-        pkg.isBlank() -> RiskGroup.PROTECTED
-        pkg in protectedExact || protectedPrefixes.any(pkg::startsWith) -> RiskGroup.PROTECTED
+        isProtected(pkg) -> RiskGroup.PROTECTED
         !systemApp -> RiskGroup.USER
-        pkg in reviewCandidates -> RiskGroup.REVIEW
+        canChange(pkg) -> RiskGroup.REVIEW
         else -> RiskGroup.UNKNOWN
     }
 }
