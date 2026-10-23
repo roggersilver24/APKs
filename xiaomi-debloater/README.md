@@ -1,4 +1,8 @@
-# Xiaomi Debloater — Android, v0.2 experimental
+# Xiaomi Debloater — Desenvolvimento pausado
+
+> **EM ESPERA:** este aplicativo foi engavetado por solicitação do responsável. Preservar o código existente, sem novas funcionalidades nem publicações até nova orientação.
+
+## Última versão experimental: v0.2
 
 APK para Xiaomi, Redmi e POCO (MIUI/HyperOS), escrito em Kotlin + Jetpack Compose. **Esta versão ainda não foi testada em telefones físicos** e não promete compatibilidade com todos os modelos.
 
