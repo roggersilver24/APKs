@@ -1,18 +1,20 @@
-# Migracao para central de APKs
+# Organização do repositório APKs
 
-- Aplicacao Amamenta Bebe movida da raiz para `amamenta-bebe/`, mantendo os mesmos arquivos (blobs Git).
-- Pipeline Actions mantido na raiz em `.github/workflows/build-apk.yml`, alterado para usar `amamenta-bebe/` como diretorio de trabalho.
-- Firebase, backend e wrapper Gradle acompanham o aplicativo para preservar caminhos relativos.
-- `applicationId`, esquema Room, versao Android, assinatura e segredos nao foram alterados.
-- Xiaomi Debloater sera independente em `xiaomi-debloater/`.
+## Estrutura
+- `amamenta-bebe/`: aplicativo existente, incluindo Android, backend, Firebase, Gradle, testes e documentação.
+- `xiaomi-debloater/`: projeto experimental **pausado**, com arquivos preservados.
+- `.github/workflows/`: pipelines separados por aplicativo.
+- `README.md`: índice dos projetos.
 
-## Verificacao antes de integrar
+## Preservação
+O código do Amamenta Bebê foi movido usando os mesmos blobs Git, sem alterar `applicationId`, dados locais, assinatura, banco Room, serviços, versão, dependências ou conteúdo dos arquivos. Os caminhos do workflow foram atualizados para `amamenta-bebe/`.
 
-1. Rodar workflow no pull request; confirmar testes Firestore e `testDebugUnitTest lintDebug lintRelease assembleRelease`.
-2. Conferir configuracao de Firebase que utilize caminhos locais e automacoes externas; atualizar diretorio-base para `amamenta-bebe/` quando aplicavel.
-3. Certificar que o APK de distribuicao continua bloqueado sem assinatura original verificada.
-4. Renomear o repositorio para `APKs` somente depois de revisar integracoes e clones.
+A compilação automática do Amamenta Bebê mantém verificação do certificado e bloqueio de distribuição sem a chave de assinatura original. O funcionamento em telefone real e integrações externas ainda requerem conferência quando houver manutenção.
 
-## Volta segura
+## Alteração do nome do repositório
+A renomeação do repositório para `APKs` deve ser feita em **Settings → General → Repository name**, uma vez que a conexão disponível para GitHub não oferece uma operação para alterar o nome remoto. Depois de renomear, use `https://github.com/roggersilver24/APKs` e atualize eventuais clones, integrações externas e links configurados manualmente.
 
-A branch `main` continua intacta ate eventual aprovacao/merge do PR. E possivel fechar o PR sem afetar o projeto publicado.
+## Limites
+- Não modificar ou continuar o Xiaomi Debloater até nova solicitação.
+- Evitar misturar versões, builds e configuração de assinatura entre aplicativos.
+- Não alterar arquivos no celular nem migrar dados de produção como parte da organização do repositório.
