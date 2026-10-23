@@ -1,0 +1,17 @@
+*.iml
+.gradle/
+/local.properties
+/.idea/
+/build/
+**/build/
+captures/
+.externalNativeBuild/
+.cxx/
+*.jks
+*.keystore
+.tools/
+google-services.json
+firebase-config.properties
+backend/node_modules/
+firebase-debug.log
+firestore-debug.log
